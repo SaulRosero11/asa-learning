@@ -1,26 +1,345 @@
 @import "tailwindcss";
+@plugin "@tailwindcss/typography";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
+/* ================================================================
+   ASA E-Learning — Design System Tokens (Tailwind CSS v4)
+   Los tokens @theme generan clases utilitarias automáticamente:
+   --color-asa-primary  →  bg-asa-primary, text-asa-primary, etc.
+   ================================================================ */
+
+@theme {
+  /* ----- Colores de Marca ----- */
+  --color-asa-primary:   #6B3FC8;   /* Púrpura ASA — botones, links activos, progreso */
+  --color-asa-primary-hover: #5A32AA; /* Púrpura oscuro — hover de botones primarios */
+  --color-asa-highlight: #EEE8FA;   /* Lavanda claro — fondo de elemento seleccionado */
+  --color-asa-gold:      #FFC300;   /* Amarillo oro — estrellas, badges */
+
+  /* ----- Colores Neutros ----- */
+  --color-asa-bg:        #F7F5FD;   /* Fondo principal — lavanda muy suave */
+  --color-asa-surface:   #FFFFFF;   /* Fondo de paneles y cards */
+  --color-asa-text:      #111827;   /* Títulos y texto de cuerpo — charcoal alto contraste */
+  --color-asa-muted:     #636A75;   /* Metadatos, subtítulos, iconos inactivos — 5.05:1 on asa-bg ✓ WCAG AA */
+  --color-asa-border:    #E5E0F3;   /* Bordes — gris con tinte lila suave */
+
+  /* ----- Estados Semánticos ----- */
+  --color-asa-success:   #22C55E;   /* Verde — completado, éxito */
+  --color-asa-warning:   #F59E0B;   /* Ámbar — advertencias, pendiente */
+  --color-asa-error:     #DC2626;   /* Rojo — errores, validación — 4.83:1 on white ✓ WCAG AA */
+  --color-asa-info:      #3B82F6;   /* Azul — información, notificaciones */
+
+  /* ----- Tipografía ----- */
+  --font-sans: var(--font-inter), system-ui, sans-serif;
+
+  /* ----- Radios de Borde ----- */
+  --radius-panel:     16px;  /* Paneles principales, cards */
+  --radius-component: 8px;   /* Botones, inputs, badges */
+
+  /* ----- Sombras ----- */
+  --shadow-subtle:   0px 1px 3px rgba(107, 63, 200, 0.04), 0px 4px 16px rgba(107, 63, 200, 0.07);
+  --shadow-card:     0px 2px 8px rgba(107, 63, 200, 0.08), 0px 8px 24px rgba(107, 63, 200, 0.06);
+  --shadow-elevated: 0px 4px 12px rgba(107, 63, 200, 0.12), 0px 16px 40px rgba(107, 63, 200, 0.10);
+  --shadow-sidebar:  2px 0px 16px rgba(107, 63, 200, 0.06);
 }
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
+/* ================================================================
+   Reset Base
+   ================================================================ */
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+@layer base {
+  *, *::before, *::after {
+    box-sizing: border-box;
+  }
+
+  html {
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  body {
+    background-color: var(--color-asa-bg);
+    color: var(--color-asa-text);
+    font-family: var(--font-sans);
+    font-size: 16px;
+    line-height: 1.5;
   }
 }
 
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+/* ================================================================
+   Componentes Reutilizables
+   ================================================================ */
+
+@layer components {
+
+  /* ----- Panel / Card ----- */
+  .panel {
+    background-color: var(--color-asa-surface);
+    border-radius: var(--radius-panel);
+    border: 1px solid var(--color-asa-border);
+    padding: 2rem;
+    box-shadow: var(--shadow-subtle);
+  }
+
+  /* ----- Glassmorphism — modales, cards de programas, navbar ----- */
+  .glass-panel {
+    background-color: rgba(255, 255, 255, 0.7);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: var(--radius-panel);
+    box-shadow: var(--shadow-card);
+  }
+
+  /* ----- Botón Primario ----- */
+  .btn-primary {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.625rem 1.25rem;
+    background-color: var(--color-asa-primary);
+    color: #ffffff;
+    font-weight: 600;
+    font-size: 0.875rem;
+    border-radius: var(--radius-component);
+    border: none;
+    cursor: pointer;
+    transition: background-color 0.18s ease, transform 0.15s ease, box-shadow 0.18s ease;
+    text-decoration: none;
+    box-shadow: 0 1px 4px rgba(107, 63, 200, 0.25);
+    letter-spacing: 0.01em;
+  }
+  .btn-primary:hover {
+    background-color: var(--color-asa-primary-hover);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(107, 63, 200, 0.35);
+  }
+  .btn-primary:active { transform: translateY(0) scale(0.97); }
+  .btn-primary:focus-visible {
+    outline: 2px solid var(--color-asa-primary);
+    outline-offset: 2px;
+  }
+  .btn-primary:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    transform: none;
+    box-shadow: none;
+  }
+
+  /* ----- Botón Outline (secundario) ----- */
+  .btn-outline {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.625rem 1.25rem;
+    background-color: var(--color-asa-surface);
+    color: var(--color-asa-text);
+    font-weight: 500;
+    font-size: 0.875rem;
+    border-radius: var(--radius-component);
+    border: 1.5px solid var(--color-asa-border);
+    cursor: pointer;
+    transition: border-color 0.18s ease, color 0.18s ease, background-color 0.18s ease;
+    text-decoration: none;
+  }
+  .btn-outline:hover {
+    border-color: var(--color-asa-primary);
+    color: var(--color-asa-primary);
+    background-color: var(--color-asa-highlight);
+  }
+  .btn-outline:active {
+    transform: scale(0.97);
+  }
+  .btn-outline:focus-visible {
+    outline: 2px solid var(--color-asa-primary);
+    outline-offset: 2px;
+  }
+
+  /* ----- Botón Icono ----- */
+  .btn-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0.5rem;
+    background: transparent;
+    border: none;
+    color: var(--color-asa-muted);
+    border-radius: 8px;
+    cursor: pointer;
+    transition: background-color 0.15s ease, color 0.15s ease;
+  }
+  .btn-icon:hover {
+    background-color: var(--color-asa-highlight);
+    color: var(--color-asa-primary);
+  }
+  .btn-icon:active { transform: scale(0.93); }
+
+  /* ----- Input de Formulario ----- */
+  .input-field {
+    width: 100%;
+    padding: 0.625rem 1rem;
+    background-color: var(--color-asa-surface);
+    border: 1.5px solid var(--color-asa-border);
+    border-radius: var(--radius-component);
+    font-size: 0.9375rem;
+    color: var(--color-asa-text);
+    transition: border-color 0.18s ease, box-shadow 0.18s ease;
+    outline: none;
+  }
+  .input-field::placeholder { color: var(--color-asa-muted); opacity: 0.7; }
+  .input-field:hover:not(:focus) { border-color: #C4B8E8; }
+  .input-field:focus {
+    border-color: var(--color-asa-primary);
+    box-shadow: 0 0 0 3px rgba(107, 63, 200, 0.12);
+  }
+  .input-field[aria-invalid="true"],
+  .input-field.error {
+    border-color: var(--color-asa-error);
+  }
+
+  /* ----- Item de Lección (sidebar de navegación) ----- */
+  .lesson-item {
+    display: grid;
+    grid-template-columns: 24px 1fr 32px;
+    gap: 1rem;
+    padding: 1rem 1.5rem;
+    border-bottom: 1px solid var(--color-asa-border);
+    border-radius: var(--radius-component);
+    cursor: pointer;
+    transition: background-color 0.15s ease, color 0.15s ease;
+  }
+  .lesson-item:hover { background-color: var(--color-asa-highlight); }
+  .lesson-item.active { background-color: var(--color-asa-highlight); }
+
+  /* ----- Tab de Navegación ----- */
+  .tab-item {
+    padding-bottom: 0.75rem;
+    color: var(--color-asa-muted);
+    font-weight: 600;
+    cursor: pointer;
+    border-bottom: 3px solid transparent;
+    transition: all 0.2s ease;
+    background: none;
+    border-top: none;
+    border-left: none;
+    border-right: none;
+  }
+  .tab-item:hover { color: var(--color-asa-primary); }
+  .tab-item.active {
+    color: var(--color-asa-primary);
+    border-bottom-color: var(--color-asa-primary);
+  }
+
+  /* ----- Badge ----- */
+  .badge {
+    display: inline-flex;
+    align-items: center;
+    padding: 0.125rem 0.5rem;
+    font-size: 0.75rem;
+    font-weight: 500;
+    border-radius: 9999px;
+  }
+  .badge-success { background-color: #DCFCE7; color: #16A34A; }
+  .badge-warning { background-color: #FEF9C3; color: #92400E; } /* amber-800: 6.31:1 on bg ✓ WCAG AA */
+  .badge-error   { background-color: #FEE2E2; color: #DC2626; }
+  .badge-info    { background-color: #DBEAFE; color: #2563EB; }
+  .badge-default { background-color: var(--color-asa-highlight); color: var(--color-asa-primary); }
+
+  /* ----- Program Card ----- */
+  .program-card {
+    background-color: var(--color-asa-surface);
+    border-radius: var(--radius-panel);
+    border: 1px solid var(--color-asa-border);
+    box-shadow: var(--shadow-subtle);
+    overflow: hidden;
+    transition: box-shadow 0.2s ease, border-color 0.2s ease, transform 0.2s ease;
+  }
+  .program-card:hover {
+    box-shadow: var(--shadow-elevated);
+    border-color: rgba(107, 63, 200, 0.25);
+    transform: translateY(-2px);
+  }
+
+  /* ----- Activity Card ----- */
+  .activity-card {
+    background-color: var(--color-asa-surface);
+    border-radius: 12px;
+    border: 1px solid var(--color-asa-border);
+    box-shadow: var(--shadow-subtle);
+    padding: 1rem 1.25rem;
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+  }
+
+  /* ----- Sub-nav (pill tabs) ----- */
+  .sub-nav {
+    display: flex;
+    gap: 0.25rem;
+    background-color: var(--color-asa-surface);
+    border: 1px solid var(--color-asa-border);
+    border-radius: 12px;
+    padding: 0.25rem;
+    width: fit-content;
+    box-shadow: var(--shadow-subtle);
+  }
+  .sub-nav-item {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.5rem 1rem;
+    border-radius: 8px;
+    font-size: 0.875rem;
+    font-weight: 500;
+    border: none;
+    cursor: pointer;
+    transition: all 0.15s ease;
+    color: var(--color-asa-muted);
+    background: transparent;
+  }
+  .sub-nav-item:hover { color: var(--color-asa-text); background-color: var(--color-asa-bg); }
+  .sub-nav-item.active { background-color: var(--color-asa-primary); color: #ffffff; box-shadow: 0 1px 4px rgba(107,63,200,0.35); }
+}
+
+/* ================================================================
+   Scrollbar personalizado
+   ================================================================ */
+
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb {
+  background: rgba(107, 63, 200, 0.2);
+  border-radius: 99px;
+}
+::-webkit-scrollbar-thumb:hover { background: rgba(107, 63, 200, 0.35); }
+
+/* ================================================================
+   Animations
+   ================================================================ */
+
+@keyframes slideInRight {
+  from { transform: translateX(100%); opacity: 0.6; }
+  to   { transform: translateX(0);    opacity: 1; }
+}
+@keyframes slideOutRight {
+  from { transform: translateX(0);    opacity: 1; }
+  to   { transform: translateX(100%); opacity: 0; }
+}
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+@keyframes fadeOut {
+  from { opacity: 1; }
+  to   { opacity: 0; }
+}
+@keyframes scaleIn {
+  from { opacity: 0; transform: scale(0.95) translateY(6px); }
+  to   { opacity: 1; transform: scale(1)    translateY(0); }
+}
+@keyframes scaleOut {
+  from { opacity: 1; transform: scale(1)    translateY(0); }
+  to   { opacity: 0; transform: scale(0.95) translateY(6px); }
+}
+@keyframes slideUpFade {
+  from { opacity: 0; transform: translateY(8px) scale(0.96); }
+  to   { opacity: 1; transform: translateY(0)   scale(1); }
 }
