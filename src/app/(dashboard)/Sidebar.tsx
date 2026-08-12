@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useState } from "react";
 import { LayoutDashboard, BookOpen, Users, LogOut, GraduationCap, ClipboardList } from "lucide-react";
 import { apiClient } from "@/lib/axios";
 
@@ -44,6 +45,7 @@ export function Sidebar() {
   const pathname = usePathname();
   const router = useRouter();
   const queryClient = useQueryClient();
+  const [logoError, setLogoError] = useState(false);
 
   const { data: user } = useQuery<CurrentUser>({
     queryKey: ["me"],
@@ -72,10 +74,20 @@ export function Sidebar() {
       {/* Logo */}
       <div className="h-16 flex items-center justify-center shrink-0" style={{ borderBottom: "1px solid var(--color-asa-border)" }}>
         <div
-          className="w-9 h-9 rounded-xl bg-asa-primary flex items-center justify-center"
+          className="w-10 h-10 rounded-xl overflow-hidden flex items-center justify-center bg-asa-primary"
           style={{ boxShadow: "0 2px 8px rgba(107,63,200,0.4)" }}
+          title="Solidaridad y Acción"
         >
-          <GraduationCap className="w-5 h-5 text-white" />
+          {!logoError ? (
+            <img
+              src="/logo.jpg"
+              alt="ASA"
+              className="w-full h-full object-cover"
+              onError={() => setLogoError(true)}
+            />
+          ) : (
+            <GraduationCap className="w-5 h-5 text-white" />
+          )}
         </div>
       </div>
 

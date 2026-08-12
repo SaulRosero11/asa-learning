@@ -57,12 +57,31 @@ export default function LoginPage() {
   return (
     <div className="min-h-screen flex">
       {/* Mitad izquierda — imagen/branding */}
-      <div className="hidden lg:flex lg:w-1/2 bg-asa-primary flex-col justify-center items-center p-12">
-        <div className="text-white text-center">
-          <h1 className="text-4xl font-bold mb-4">ASA E-Learning</h1>
-          <p className="text-lg opacity-80 max-w-sm">
-            Plataforma de capacitación de la ONG Solidaridad y Acción
+      <div className="hidden lg:flex lg:w-1/2 bg-asa-primary flex-col justify-center items-center p-12 relative overflow-hidden">
+        {/* Círculos decorativos de fondo */}
+        <div className="absolute -top-20 -right-20 w-80 h-80 rounded-full bg-white/5" />
+        <div className="absolute -bottom-20 -left-20 w-80 h-80 rounded-full bg-white/5" />
+        <div className="absolute top-1/4 -left-10 w-40 h-40 rounded-full bg-white/5" />
+
+        <div className="text-white text-center max-w-sm relative z-10">
+          {/* Logo ASA */}
+          <div className="w-28 h-28 rounded-2xl overflow-hidden mx-auto mb-8 bg-white flex items-center justify-center shadow-lg">
+            <img
+              src="/logo.jpg"
+              alt="Solidaridad y Acción"
+              className="w-full h-full object-contain p-1"
+            />
+          </div>
+          <h1 className="text-4xl font-bold mb-3">ASA E-Learning</h1>
+          <p className="text-lg opacity-80 leading-relaxed">
+            Plataforma de capacitación de la ONG<br />
+            <span className="font-semibold">Solidaridad y Acción</span>
           </p>
+          <div className="mt-10 flex items-center justify-center gap-2">
+            <div className="w-8 h-1 rounded-full bg-white/80" />
+            <div className="w-2 h-1 rounded-full bg-white/40" />
+            <div className="w-2 h-1 rounded-full bg-white/20" />
+          </div>
         </div>
       </div>
 
@@ -70,6 +89,12 @@ export default function LoginPage() {
       <div className="w-full lg:w-1/2 flex items-center justify-center p-8 bg-asa-bg">
         <div className="w-full max-w-md">
           <div className="panel">
+            {/* Logo — visible en móvil donde el panel izquierdo está oculto */}
+            <div className="flex justify-center mb-6 lg:hidden">
+              <div className="w-16 h-16 rounded-xl overflow-hidden bg-asa-primary flex items-center justify-center" style={{ boxShadow: "0 2px 10px rgba(107,63,200,0.3)" }}>
+                <img src="/logo.jpg" alt="ASA" className="w-full h-full object-contain p-1" />
+              </div>
+            </div>
             <h2 className="text-display text-asa-text mb-2">Iniciar sesión</h2>
             <p className="text-muted text-asa-muted mb-8">
               Accede a tu cuenta de ASA E-Learning

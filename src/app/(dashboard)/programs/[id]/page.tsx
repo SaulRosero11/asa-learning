@@ -254,7 +254,7 @@ export default function ProgramDetailPage({ params }: { params: Promise<{ id: st
         {activeTab === "content"      && <ContentTabWrapper programId={programId} params={params} />}
         {activeTab === "assessments"  && <AssessmentsTabWrapper programId={programId} params={params} />}
         {activeTab === "community"    && <CommunityTabWrapper programId={programId} params={params} />}
-        {activeTab === "students"     && <StudentsTab programId={programId} isAdmin={isAdminOrSuperAdmin} />}
+        {activeTab === "students"     && <StudentsTab programId={programId} isAdmin={isAdminOrSuperAdmin} programStatus={program?.status} />}
       </div>
 
       <ConfirmDialog

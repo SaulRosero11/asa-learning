@@ -3,13 +3,14 @@
 import { use } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useSearchParams } from "next/navigation";
-import { CheckCircle2, XCircle, ArrowLeft, Trophy } from "lucide-react";
+import { CheckCircle2, XCircle, ArrowLeft, Trophy, ClipboardCheck, Clock } from "lucide-react";
 import Link from "next/link";
 import { apiClient } from "@/lib/axios";
 
 interface QuestionResult {
   questionId: string;
   questionText: string;
+  questionType: string;
   pointsAwarded: number;
   weight: number;
   wasCorrect: boolean;
@@ -23,6 +24,12 @@ interface AttemptResult {
   status: string;
   endTime: string;
   questionResults: QuestionResult[] | null;
+}
+
+interface Assessment {
+  id: string;
+  type: string;
+  title: string;
 }
 
 // CSS-based donut chart (no recharts needed for MVP)
@@ -69,17 +76,27 @@ export default function AssessmentResultPage({
   const searchParams = useSearchParams();
   const attemptId = searchParams.get("attempt");
 
+  const { data: assessment } = useQuery<Assessment>({
+    queryKey: ["assessment", assessmentId],
+    queryFn: () =>
+      apiClient.get(`/api/v1/assessments/${assessmentId}`).then((r) => r.data),
+    enabled: !!assessmentId,
+  });
+
   const { data: attempts, isLoading } = useQuery<AttemptResult[]>({
     queryKey: ["my-attempts", assessmentId],
     queryFn: () =>
       apiClient
         .get(`/api/v1/assessments/${assessmentId}/my-attempts`)
         .then((r) => r.data),
-    enabled: !attemptId,
+    enabled: !!assessmentId,
+    retry: 1,
   });
 
-  // If attemptId is in URL, find it from the list or use first
-  const result = attempts?.[0] ?? null;
+  const isSurvey = assessment?.type === "SURVEY";
+  const result = attemptId
+    ? (attempts?.find((a) => a.attemptId === attemptId) ?? attempts?.[0] ?? null)
+    : (attempts?.[0] ?? null);
   const percentage = result?.percentage ?? 0;
 
   if (isLoading) {
@@ -116,75 +133,105 @@ export default function AssessmentResultPage({
         <ArrowLeft className="w-4 h-4" /> Ver todas las evaluaciones
       </Link>
 
-      {/* Score card */}
-      <div className="panel text-center space-y-4">
-        <div className="flex items-center justify-center gap-2">
-          <Trophy className={`w-6 h-6 ${passed ? "text-asa-gold" : "text-asa-muted"}`} />
-          <h1 className="text-xl font-bold">
-            {passed ? "¡Excelente resultado!" : "Evaluación completada"}
-          </h1>
-        </div>
-
-        <ScoreDonut percentage={Number(percentage)} />
-
-        <div className="flex items-center justify-center gap-6 text-sm">
-          <div className="text-center">
-            <p className="text-2xl font-bold text-asa-text">
-              {Number(result.totalScore).toFixed(1)}
-            </p>
-            <p className="text-asa-muted text-xs">puntos obtenidos</p>
+      {/* Score card — survey vs exam */}
+      {isSurvey ? (
+        <div className="panel text-center space-y-5 py-10">
+          <div className="mx-auto w-16 h-16 rounded-full bg-green-50 flex items-center justify-center">
+            <ClipboardCheck className="w-8 h-8 text-green-600" />
           </div>
-          <div className="w-px h-10 bg-asa-border" />
-          <div className="text-center">
-            <p className="text-2xl font-bold text-asa-text">
-              {Number(result.maxScore).toFixed(1)}
+          <div>
+            <h1 className="text-xl font-bold text-asa-text">¡Encuesta completada!</h1>
+            <p className="text-sm text-asa-muted mt-1">
+              Gracias por responder. Tus respuestas han sido registradas correctamente.
             </p>
-            <p className="text-asa-muted text-xs">puntos posibles</p>
           </div>
+          {result.endTime && (
+            <p className="text-xs text-asa-muted">
+              Completado el {new Date(result.endTime).toLocaleString("es-EC")}
+            </p>
+          )}
+          <Link
+            href={`/programs/${programId}/assessments`}
+            className="btn-primary inline-flex mx-auto"
+          >
+            Volver a evaluaciones
+          </Link>
         </div>
+      ) : (
+        <div className="panel text-center space-y-4">
+          <div className="flex items-center justify-center gap-2">
+            <Trophy className={`w-6 h-6 ${passed ? "text-asa-gold" : "text-asa-muted"}`} />
+            <h1 className="text-xl font-bold">
+              {passed ? "¡Excelente resultado!" : "Evaluación completada"}
+            </h1>
+          </div>
 
-        {result.endTime && (
-          <p className="text-xs text-asa-muted">
-            Completado el {new Date(result.endTime).toLocaleString("es-EC")}
-          </p>
-        )}
-      </div>
+          <ScoreDonut percentage={Number(percentage)} />
+
+          <div className="flex items-center justify-center gap-6 text-sm">
+            <div className="text-center">
+              <p className="text-2xl font-bold text-asa-text">
+                {Number(result.totalScore).toFixed(1)}
+              </p>
+              <p className="text-asa-muted text-xs">puntos obtenidos</p>
+            </div>
+            <div className="w-px h-10 bg-asa-border" />
+            <div className="text-center">
+              <p className="text-2xl font-bold text-asa-text">
+                {Number(result.maxScore).toFixed(1)}
+              </p>
+              <p className="text-asa-muted text-xs">puntos posibles</p>
+            </div>
+          </div>
+
+          {result.endTime && (
+            <p className="text-xs text-asa-muted">
+              Completado el {new Date(result.endTime).toLocaleString("es-EC")}
+            </p>
+          )}
+        </div>
+      )}
 
       {/* Question-by-question feedback (EXAM only) */}
-      {result.questionResults && result.questionResults.length > 0 && (
+      {!isSurvey && result.questionResults && result.questionResults.length > 0 && (
         <div className="space-y-3">
           <h2 className="font-semibold text-asa-text">Retroalimentación por pregunta</h2>
-          {result.questionResults.map((qr, i) => (
-            <div
-              key={qr.questionId}
-              className={`panel flex items-start gap-3 p-4 border-l-4 ${
-                qr.wasCorrect ? "border-l-asa-success" : "border-l-asa-error"
-              }`}
-            >
-              {qr.wasCorrect ? (
-                <CheckCircle2 className="w-5 h-5 text-asa-success shrink-0 mt-0.5" />
-              ) : (
-                <XCircle className="w-5 h-5 text-asa-error shrink-0 mt-0.5" />
-              )}
-              <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium text-asa-text">
-                  {i + 1}. {qr.questionText}
-                </p>
-                <div className="flex items-center gap-3 mt-1">
-                  <span className={`text-xs font-medium ${qr.wasCorrect ? "text-asa-success" : "text-asa-error"}`}>
-                    {qr.wasCorrect ? "Correcto" : "Incorrecto"}
-                  </span>
-                  {Number(qr.weight) > 0 && (
-                    <span className="text-xs text-asa-muted">
-                      {Number(qr.pointsAwarded).toFixed(1)} / {Number(qr.weight).toFixed(1)} pts
+          {result.questionResults.map((qr, i) => {
+            const isTextOpen = qr.questionType === "TEXT_OPEN";
+            const borderColor = isTextOpen ? "border-l-amber-400" : qr.wasCorrect ? "border-l-asa-success" : "border-l-asa-error";
+            return (
+              <div
+                key={qr.questionId}
+                className={`panel flex items-start gap-3 p-4 border-l-4 ${borderColor}`}
+              >
+                {isTextOpen ? (
+                  <Clock className="w-5 h-5 text-amber-500 shrink-0 mt-0.5" />
+                ) : qr.wasCorrect ? (
+                  <CheckCircle2 className="w-5 h-5 text-asa-success shrink-0 mt-0.5" />
+                ) : (
+                  <XCircle className="w-5 h-5 text-asa-error shrink-0 mt-0.5" />
+                )}
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-medium text-asa-text">
+                    {i + 1}. {qr.questionText}
+                  </p>
+                  <div className="flex items-center gap-3 mt-1">
+                    <span className={`text-xs font-medium ${isTextOpen ? "text-amber-600" : qr.wasCorrect ? "text-asa-success" : "text-asa-error"}`}>
+                      {isTextOpen ? "Pendiente de revisión" : qr.wasCorrect ? "Correcto" : "Incorrecto"}
                     </span>
-                  )}
+                    {Number(qr.weight) > 0 && (
+                      <span className="text-xs text-asa-muted">
+                        {isTextOpen ? `0 / ${Number(qr.weight).toFixed(1)} pts` : `${Number(qr.pointsAwarded).toFixed(1)} / ${Number(qr.weight).toFixed(1)} pts`}
+                      </span>
+                    )}
+                  </div>
                 </div>
               </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       )}
     </div>
   );
 }
+

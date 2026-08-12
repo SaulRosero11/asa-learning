@@ -1,10 +1,10 @@
 "use client";
 
 import { use, useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import {
   ArrowLeft, Users, ChevronDown, ChevronUp,
-  CheckCircle2, XCircle, Download,
+  CheckCircle2, XCircle, Download, Pencil,
 } from "lucide-react";
 import Link from "next/link";
 import { apiClient } from "@/lib/axios";
@@ -14,10 +14,14 @@ import { formatScore } from "@/lib/scores";
 // ── Types ─────────────────────────────────────────────────────────────────────
 
 interface AnswerDetail {
+  responseId: string;
   questionId: string;
   questionText: string;
+  questionType: string;
   selectedOptionText: string;
   correct: boolean;
+  pointsAwarded: number | null;
+  maxPoints: number | null;
 }
 
 interface AttemptDetail {
@@ -47,13 +51,24 @@ export default function LeaderResultsPage({
   params: Promise<{ id: string; assessmentId: string }>;
 }) {
   const { id: programId, assessmentId } = use(params);
+  const queryClient = useQueryClient();
   const [expandedUserId, setExpandedUserId] = useState<string | null>(null);
   const [activeAttemptIdx, setActiveAttemptIdx] = useState<Record<string, number>>({});
+  const [gradeInputs, setGradeInputs] = useState<Record<string, string>>({});
 
-  const { data: results = [], isLoading } = useQuery<UserResult[]>({
+  const gradeMutation = useMutation({
+    mutationFn: ({ responseId, points }: { responseId: string; points: number }) =>
+      apiClient.put(`/api/v1/responses/${responseId}/grade`, { points }).then(r => r.data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["assessment-results-grouped", assessmentId] });
+    },
+  });
+
+  const { data: results = [], isLoading, isError } = useQuery<UserResult[]>({
     queryKey: ["assessment-results-grouped", assessmentId],
     queryFn: () =>
       apiClient.get(`/api/v1/assessments/${assessmentId}/results`).then(r => r.data),
+    retry: 1,
   });
 
   const isSurvey = results.length > 0 && results[0].assessmentType === "SURVEY";
@@ -140,8 +155,16 @@ export default function LeaderResultsPage({
         </div>
       )}
 
+      {/* Error */}
+      {isError && (
+        <div className="bg-red-50 border border-red-200 rounded-xl p-6 text-center">
+          <p className="text-sm font-medium text-red-700">No se pudieron cargar los resultados.</p>
+          <p className="text-xs text-red-500 mt-1">Verifica que el servidor esté activo o que tengas permisos para ver esta evaluación.</p>
+        </div>
+      )}
+
       {/* Empty */}
-      {!isLoading && results.length === 0 && (
+      {!isLoading && !isError && results.length === 0 && (
         <div className="bg-white rounded-2xl border border-asa-border shadow-subtle p-14 text-center">
           <Users className="w-10 h-10 mx-auto text-asa-primary/30 mb-3" />
           <p className="text-asa-muted text-sm">Aún no hay intentos registrados para esta evaluación.</p>
@@ -149,7 +172,7 @@ export default function LeaderResultsPage({
       )}
 
       {/* User rows */}
-      {!isLoading && results.length > 0 && (
+      {!isLoading && !isError && results.length > 0 && (
         <div className="space-y-2">
           {results.map(result => {
             const isExpanded = expandedUserId === result.userId;
@@ -223,21 +246,66 @@ export default function LeaderResultsPage({
                           </div>
                           {activeAttempt.answers.length === 0 ? (
                             <p className="text-xs text-asa-muted">Sin respuestas registradas.</p>
-                          ) : activeAttempt.answers.map((ans, i) => (
-                            <div key={ans.questionId ?? i} className="flex items-start gap-3 py-2 border-b border-asa-border last:border-0">
-                              <div className="mt-0.5 shrink-0">
-                                {ans.correct
-                                  ? <CheckCircle2 className="w-4 h-4 text-green-500" />
-                                  : <XCircle className="w-4 h-4 text-red-400" />}
+                          ) : activeAttempt.answers.map((ans, i) => {
+                            const isTextOpen = ans.questionType === "TEXT_OPEN";
+                            const inputKey = ans.responseId ?? `${i}`;
+                            const inputVal = gradeInputs[inputKey] ?? String(ans.pointsAwarded ?? 0);
+                            const isGrading = gradeMutation.isPending && gradeMutation.variables?.responseId === ans.responseId;
+
+                            return (
+                              <div key={ans.questionId ?? i} className="py-2 border-b border-asa-border last:border-0">
+                                <div className="flex items-start gap-3">
+                                  <div className="mt-0.5 shrink-0">
+                                    {isSurvey || isTextOpen
+                                      ? <Pencil className="w-4 h-4 text-asa-primary/50" />
+                                      : ans.correct
+                                        ? <CheckCircle2 className="w-4 h-4 text-green-500" />
+                                        : <XCircle className="w-4 h-4 text-red-400" />}
+                                  </div>
+                                  <div className="flex-1 min-w-0">
+                                    <p className="text-xs font-medium text-asa-text">{ans.questionText}</p>
+                                    <p className={`text-xs mt-0.5 ${
+                                      isSurvey || isTextOpen ? "text-asa-muted" : ans.correct ? "text-green-600" : "text-red-500"
+                                    }`}>
+                                      {ans.selectedOptionText}
+                                    </p>
+                                  </div>
+                                  {!isSurvey && isTextOpen && ans.responseId && (
+                                    <div className="flex items-center gap-1.5 shrink-0">
+                                      <input
+                                        type="number"
+                                        min={0}
+                                        max={ans.maxPoints ?? 100}
+                                        step="0.5"
+                                        value={inputVal}
+                                        onChange={e => setGradeInputs(prev => ({ ...prev, [inputKey]: e.target.value }))}
+                                        className="w-16 text-xs border border-asa-border rounded-lg px-2 py-1 text-center focus:outline-none focus:border-asa-primary"
+                                        disabled={isGrading}
+                                      />
+                                      <span className="text-xs text-asa-muted">/ {ans.maxPoints ?? 0}</span>
+                                      <button
+                                        onClick={() => {
+                                          const pts = parseFloat(inputVal);
+                                          if (!isNaN(pts)) gradeMutation.mutate({ responseId: ans.responseId, points: pts });
+                                        }}
+                                        disabled={isGrading}
+                                        className="text-xs px-2 py-1 rounded-lg bg-asa-primary text-white hover:bg-asa-primary/90 transition-colors disabled:opacity-50"
+                                      >
+                                        {isGrading ? "…" : "Calificar"}
+                                      </button>
+                                    </div>
+                                  )}
+                                </div>
+                                {!isSurvey && isTextOpen && (
+                                  <p className="text-xs text-asa-muted mt-1 pl-7">
+                                    Nota actual: <span className="font-semibold text-asa-text">
+                                      {ans.pointsAwarded != null ? Number(ans.pointsAwarded).toFixed(1) : "—"} pts
+                                    </span>
+                                  </p>
+                                )}
                               </div>
-                              <div className="flex-1 min-w-0">
-                                <p className="text-xs font-medium text-asa-text">{ans.questionText}</p>
-                                <p className={`text-xs mt-0.5 ${ans.correct ? "text-green-600" : "text-red-500"}`}>
-                                  {ans.selectedOptionText}
-                                </p>
-                              </div>
-                            </div>
-                          ))}
+                            );
+                          })}
                         </>
                       )}
                     </div>

@@ -47,7 +47,15 @@ const INVITE_STATUS: Record<string, { label: string; color: string }> = {
 
 // ── Main component ─────────────────────────────────────────────────────────────
 
-export function StudentsTab({ programId, isAdmin }: { programId: string; isAdmin?: boolean }) {
+export function StudentsTab({
+  programId,
+  isAdmin,
+  programStatus,
+}: {
+  programId: string;
+  isAdmin?: boolean;
+  programStatus?: string;
+}) {
   const queryClient = useQueryClient();
   const [leaderDrawer, setLeaderDrawer]       = useState(false);
   const [inviteDrawer, setInviteDrawer]       = useState(false);
@@ -80,12 +88,18 @@ export function StudentsTab({ programId, isAdmin }: { programId: string; isAdmin
     enabled: isLeader,
   });
 
-  // Admin-eligible users for leader assignment
+  // Admin-eligible users for leader assignment (excluding users that already are ADMIN/SUPER_ADMIN)
   const { data: eligibleUsers } = useQuery<{ content: AdminUser[] }>({
     queryKey: ["admin-users-eligible"],
     queryFn: () => apiClient.get("/api/v1/admin/users?size=100").then(r => r.data),
     enabled: leaderDrawer,
-    select: d => ({ content: d.content.filter((u: AdminUser) => u.adminEligible) }),
+    select: d => ({
+      content: d.content.filter(
+        (u: AdminUser) =>
+          u.adminEligible &&
+          !u.roles.some(r => ["ADMIN", "SUPER_ADMIN"].includes(r))
+      ),
+    }),
   });
 
   // Mutations
@@ -190,7 +204,7 @@ export function StudentsTab({ programId, isAdmin }: { programId: string; isAdmin
         )}
       </section>
 
-      {/* Invitations — leaders only */}
+      {/* Invitations — leaders only, only when program is ACTIVE */}
       {isLeader && (
         <section>
           <div className="flex items-center justify-between mb-3">
@@ -199,9 +213,15 @@ export function StudentsTab({ programId, isAdmin }: { programId: string; isAdmin
               Invitaciones
               <span className="text-xs text-asa-muted font-normal">({invitations.length})</span>
             </h3>
-            <button onClick={() => { setInviteDrawer(true); setInviteSent(false); }} className="btn-primary text-sm">
-              <Send className="w-3.5 h-3.5" /> Invitar estudiantes
-            </button>
+            {programStatus === "ACTIVE" ? (
+              <button onClick={() => { setInviteDrawer(true); setInviteSent(false); }} className="btn-primary text-sm">
+                <Send className="w-3.5 h-3.5" /> Invitar estudiantes
+              </button>
+            ) : (
+              <span className="text-xs text-asa-muted bg-asa-bg border border-asa-border px-3 py-1.5 rounded-lg">
+                Activa el programa para enviar invitaciones
+              </span>
+            )}
           </div>
 
           {loadingInvites ? (

@@ -21,6 +21,8 @@ interface Assessment {
   type: string;
   maxAttempts: number;
   attemptsUsed: number;
+  startDate: string | null;
+  endDate: string | null;
   questions: Question[];
 }
 
@@ -60,6 +62,30 @@ export default function PlayAssessmentPage({
     return (
       <div className="flex items-center justify-center h-64">
         <div className="w-8 h-8 rounded-full border-2 border-asa-primary border-t-transparent animate-spin" />
+      </div>
+    );
+  }
+
+  const now = new Date();
+  if (assessment.startDate && new Date(assessment.startDate) > now) {
+    return (
+      <div className="panel text-center py-14 max-w-lg mx-auto">
+        <p className="text-lg font-semibold text-asa-text mb-1">Esta evaluación aún no ha comenzado</p>
+        <p className="text-sm text-asa-muted">
+          Disponible desde el {new Date(assessment.startDate).toLocaleString("es-EC")}
+        </p>
+        <button onClick={() => router.back()} className="btn-outline mt-6">Volver</button>
+      </div>
+    );
+  }
+  if (assessment.endDate && new Date(assessment.endDate) < now) {
+    return (
+      <div className="panel text-center py-14 max-w-lg mx-auto">
+        <p className="text-lg font-semibold text-asa-text mb-1">El período de esta evaluación ha finalizado</p>
+        <p className="text-sm text-asa-muted">
+          Cerró el {new Date(assessment.endDate).toLocaleString("es-EC")}
+        </p>
+        <button onClick={() => router.back()} className="btn-outline mt-6">Volver</button>
       </div>
     );
   }
@@ -109,6 +135,11 @@ export default function PlayAssessmentPage({
             Una vez enviado, no podrás modificar tus respuestas.
           </p>
         </div>
+        {submitMutation.isError && (
+          <div className="p-3 bg-red-50 border border-red-200 rounded-xl text-sm text-asa-error text-center">
+            Error al enviar las respuestas. Por favor, inténtalo de nuevo.
+          </div>
+        )}
         <div className="flex gap-3 justify-center">
           <button onClick={() => setShowConfirm(false)} className="btn-outline">
             Volver a revisar

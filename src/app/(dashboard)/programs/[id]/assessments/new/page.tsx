@@ -3,7 +3,7 @@
 import { use, useState, useEffect } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Plus, Trash2, ArrowLeft, CheckSquare, Circle, AlignLeft, GripVertical } from "lucide-react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { apiClient } from "@/lib/axios";
 import { ConfirmDialog } from "@/components/ConfirmDialog";
 import {
@@ -47,10 +47,8 @@ export default function NewAssessmentPage({ params }: { params: Promise<{ id: st
   const router = useRouter();
   const queryClient = useQueryClient();
 
-  const [editId] = useState<string | null>(() => {
-    if (typeof window === "undefined") return null;
-    return new URLSearchParams(window.location.search).get("edit");
-  });
+  const searchParams = useSearchParams();
+  const editId = searchParams.get("edit");
   const isEditMode = !!editId;
 
   // Basic info
@@ -102,12 +100,18 @@ export default function NewAssessmentPage({ params }: { params: Promise<{ id: st
     }
   }, [editAssessment]);
 
+  const [saveError, setSaveError] = useState<string | null>(null);
+
   const createMutation = useMutation({
     mutationFn: (data: any) =>
       apiClient.post(`/api/v1/programs/${programId}/assessments`, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["assessments", programId] });
       router.push(`/programs/${programId}/assessments`);
+    },
+    onError: (error: any) => {
+      const msg = error?.response?.data?.message ?? error?.message ?? "Error desconocido al crear la evaluación";
+      setSaveError(msg);
     },
   });
 
@@ -117,6 +121,10 @@ export default function NewAssessmentPage({ params }: { params: Promise<{ id: st
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["assessments", programId] });
       router.push(`/programs/${programId}/assessments`);
+    },
+    onError: (error: any) => {
+      const msg = error?.response?.data?.message ?? error?.message ?? "Error desconocido al guardar los cambios";
+      setSaveError(msg);
     },
   });
 
@@ -201,10 +209,17 @@ export default function NewAssessmentPage({ params }: { params: Promise<{ id: st
   const buildPayload = (overridePublished: boolean) => {
     const errors: Record<string, string> = {};
     const mappedQuestions = questions.map((q, idx) => {
+      if (!q.text.trim()) {
+        errors[q.id] = "El texto de la pregunta es requerido.";
+      }
       const isChoice = q.type !== "TEXT_OPEN";
       const filteredOptions = isChoice ? q.options.filter((o) => o.text.trim() !== "") : [];
-      if (isChoice && filteredOptions.length === 0) {
+      if (!errors[q.id] && isChoice && filteredOptions.length === 0) {
         errors[q.id] = "La pregunta debe tener al menos una opción con texto.";
+      }
+      const isExam = type === "EXAM";
+      if (!errors[q.id] && isExam && isChoice && !filteredOptions.some((o) => o.isCorrect)) {
+        errors[q.id] = "Debes marcar al menos una respuesta correcta en evaluaciones calificadas.";
       }
       return {
         questionText: q.text,
@@ -230,6 +245,7 @@ export default function NewAssessmentPage({ params }: { params: Promise<{ id: st
   };
 
   const doSubmit = (payload: any) => {
+    setSaveError(null);
     if (isEditMode) {
       updateMutation.mutate(payload);
     } else {
@@ -238,6 +254,7 @@ export default function NewAssessmentPage({ params }: { params: Promise<{ id: st
   };
 
   const handleSubmit = (overridePublished: boolean) => {
+    setSaveError(null);
     if (!title.trim()) return alert("El título es requerido.");
     const { errors, payload } = buildPayload(overridePublished);
     if (Object.keys(errors).length > 0) {
@@ -246,7 +263,7 @@ export default function NewAssessmentPage({ params }: { params: Promise<{ id: st
     }
     setQuestionErrors({});
 
-    if (isEditMode && editAssessment && editAssessment.attemptsUsed > 0) {
+    if (isEditMode && editAssessment && (editAssessment.attemptsUsed ?? 0) > 0) {
       setPendingPayload(payload);
       setShowAttemptsWarning(true);
     } else {
@@ -429,6 +446,14 @@ export default function NewAssessmentPage({ params }: { params: Promise<{ id: st
         </DndContext>
       </div>
 
+      {/* ── Error banner ── */}
+      {saveError && (
+        <div className="rounded-xl border border-asa-error/30 bg-red-50 px-4 py-3 text-sm text-asa-error flex items-start gap-2">
+          <span className="font-semibold shrink-0">Error:</span>
+          <span>{saveError}</span>
+        </div>
+      )}
+
       {/* ── Actions ── */}
       <div className="flex items-center justify-between pt-2">
         <button onClick={() => router.back()} className="btn-outline">
@@ -498,10 +523,11 @@ function SortableQuestionWrapper({
 // ── Sortable Option Row ───────────────────────────────────────────────────────
 
 function SortableOptionRow({
-  option, questionType, onUpdate, onRemove, canRemove, placeholder,
+  option, questionType, isSurvey, onUpdate, onRemove, canRemove, placeholder,
 }: {
   option: Option;
   questionType: "SINGLE_CHOICE" | "MULTIPLE_CHOICE" | "TEXT_OPEN";
+  isSurvey: boolean;
   onUpdate: (patch: Partial<Option>) => void;
   onRemove: () => void;
   canRemove: boolean;
@@ -519,13 +545,15 @@ function SortableOptionRow({
       <button {...attributes} {...listeners} className="text-asa-muted hover:text-asa-text cursor-grab active:cursor-grabbing p-1 shrink-0">
         <GripVertical className="w-3.5 h-3.5" />
       </button>
-      <input
-        type={questionType === "SINGLE_CHOICE" ? "radio" : "checkbox"}
-        checked={option.isCorrect}
-        onChange={e => onUpdate({ isCorrect: e.target.checked })}
-        className="w-4 h-4 accent-asa-primary shrink-0"
-        title="Marcar como respuesta correcta"
-      />
+      {!isSurvey && (
+        <input
+          type={questionType === "SINGLE_CHOICE" ? "radio" : "checkbox"}
+          checked={option.isCorrect}
+          onChange={e => onUpdate({ isCorrect: e.target.checked })}
+          className="w-4 h-4 accent-asa-primary shrink-0"
+          title="Marcar como respuesta correcta"
+        />
+      )}
       <input
         className="input-field flex-1 py-2 text-sm"
         placeholder={placeholder}
@@ -649,6 +677,7 @@ function QuestionEditor({
                       key={option.id}
                       option={option}
                       questionType={question.type}
+                      isSurvey={isSurvey}
                       placeholder={`Opción ${idx + 1}`}
                       onUpdate={patch => onUpdateOption(option.id, patch)}
                       onRemove={() => onRemoveOption(option.id)}
@@ -664,17 +693,21 @@ function QuestionEditor({
               >
                 <Plus className="w-3.5 h-3.5" /> Agregar opción
               </button>
-              <p className="text-xs text-asa-muted">
-                {question.type === "SINGLE_CHOICE"
-                  ? "Selecciona el radio de la respuesta correcta."
-                  : "Marca todas las respuestas correctas."}
-              </p>
+              {!isSurvey && (
+                <p className="text-xs text-asa-muted">
+                  {question.type === "SINGLE_CHOICE"
+                    ? "Selecciona el radio de la respuesta correcta."
+                    : "Marca todas las respuestas correctas."}
+                </p>
+              )}
             </div>
           )}
 
           {question.type === "TEXT_OPEN" && (
             <div className="p-3 rounded-lg bg-asa-bg border border-dashed border-asa-border text-sm text-asa-muted">
-              El estudiante escribirá su respuesta libremente. La calificación es manual.
+              {isSurvey
+                ? "El participante escribirá su respuesta libremente."
+                : "El estudiante escribirá su respuesta libremente. La calificación es manual."}
             </div>
           )}
         </div>

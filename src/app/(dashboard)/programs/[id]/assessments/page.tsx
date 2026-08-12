@@ -107,10 +107,15 @@ export default function AssessmentsPage({ params }: { params: Promise<{ id: stri
       <div className="space-y-3">
         {assessments.map((assessment) => {
           const typeConfig = TYPE_LABELS[assessment.type] ?? TYPE_LABELS.EXAM;
+          const now = new Date();
+          const notStartedYet = !!assessment.startDate && new Date(assessment.startDate) > now;
+          const alreadyClosed = !!assessment.endDate && new Date(assessment.endDate) < now;
           const canTake =
             !isLeader &&
             assessment.published &&
-            assessment.attemptsUsed < assessment.maxAttempts;
+            assessment.attemptsUsed < assessment.maxAttempts &&
+            !notStartedYet &&
+            !alreadyClosed;
           const hasAttempts = !isLeader && assessment.attemptsUsed > 0;
 
           return (
@@ -162,6 +167,16 @@ export default function AssessmentsPage({ params }: { params: Promise<{ id: stri
 
               <div className="flex items-center gap-2 shrink-0">
                 {/* Student actions */}
+                {!isLeader && notStartedYet && (
+                  <span className="text-xs text-amber-700 bg-amber-50 px-2.5 py-1.5 rounded-lg font-medium">
+                    Desde {new Date(assessment.startDate!).toLocaleDateString("es-EC")}
+                  </span>
+                )}
+                {!isLeader && alreadyClosed && !hasAttempts && (
+                  <span className="text-xs text-gray-500 bg-gray-100 px-2.5 py-1.5 rounded-lg font-medium">
+                    Cerrado
+                  </span>
+                )}
                 {!isLeader && canTake && (
                   <Link
                     href={`/programs/${programId}/assessments/${assessment.id}/play`}

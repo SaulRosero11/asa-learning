@@ -5,7 +5,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { Search, Plus, Shield, Users, KeyRound } from "lucide-react";
+import { Search, Plus, Shield, Users, KeyRound, X } from "lucide-react";
 import Link from "next/link";
 import { apiClient } from "@/lib/axios";
 import { Drawer } from "@/components/Drawer";
@@ -23,12 +23,18 @@ const ROLE_COLORS: Record<string, string> = {
 // ── Create user form schema ────────────────────────────────────────────────────
 
 const createUserSchema = z.object({
-  email:    z.string().email("Correo inválido").endsWith(
-    "@solidaridadyaccion.org",
-    "Solo se permiten correos @solidaridadyaccion.org"
-  ),
-  password: z.string().min(8, "Mínimo 8 caracteres"),
-  role:     z.enum(["PROGRAM_LEADER", "ADMIN"], { required_error: "Selecciona un rol" }),
+  email: z
+    .string()
+    .email("Correo inválido")
+    .endsWith("@solidaridadyaccion.org", "Solo se permiten correos @solidaridadyaccion.org"),
+  password: z
+    .string()
+    .min(8, "Mínimo 8 caracteres")
+    .max(64, "Máximo 64 caracteres")
+    .regex(/[A-Z]/, "Debe tener al menos una letra mayúscula")
+    .regex(/[a-z]/, "Debe tener al menos una letra minúscula")
+    .regex(/[0-9]/, "Debe tener al menos un número"),
+  role: z.enum(["PROGRAM_LEADER", "ADMIN"]),
 });
 
 type CreateUserForm = z.infer<typeof createUserSchema>;
@@ -239,31 +245,52 @@ export default function AdminUsersPage() {
 
       {/* Assign role modal */}
       {selectedUser && (
-        <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md p-6">
-            <h3 className="text-lg font-semibold text-asa-text mb-1">Asignar rol</h3>
-            <p className="text-sm text-asa-muted mb-5">
-              Usuario: <strong>{selectedUser.email}</strong>
-            </p>
-            <label className="block text-sm font-medium text-asa-text mb-1.5">Rol a asignar</label>
-            <select
-              className="input-field mb-5"
-              value={selectedRole}
-              onChange={e => setSelectedRole(e.target.value)}
-            >
-              {ASSIGNABLE_ROLES.map(r => <option key={r} value={r}>{r.replace(/_/g, " ")}</option>)}
-            </select>
-            <div className="flex gap-3">
-              <button onClick={() => setSelectedUser(null)} className="btn-outline flex-1 justify-center">
-                Cancelar
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl w-full max-w-md overflow-hidden" style={{ boxShadow: "var(--shadow-elevated)" }}>
+            {/* Header */}
+            <div className="flex items-center justify-between px-6 py-4 border-b border-asa-border">
+              <div className="flex items-center gap-2">
+                <Shield className="w-4 h-4 text-asa-primary" />
+                <h3 className="text-base font-semibold text-asa-text">Asignar rol</h3>
+              </div>
+              <button onClick={() => setSelectedUser(null)} className="btn-icon">
+                <X className="w-4 h-4" />
               </button>
-              <button
-                onClick={() => assignMutation.mutate({ userId: selectedUser.id, roleName: selectedRole })}
-                disabled={assignMutation.isPending}
-                className="btn-primary flex-1 justify-center"
-              >
-                {assignMutation.isPending ? "Asignando..." : "Confirmar"}
-              </button>
+            </div>
+            {/* Body */}
+            <div className="p-6 space-y-4">
+              <div className="p-3 bg-asa-bg rounded-xl">
+                <p className="text-xs text-asa-muted mb-0.5">Usuario</p>
+                <p className="text-sm font-medium text-asa-text">{selectedUser.email}</p>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-asa-text mb-1.5">Rol a asignar</label>
+                <select
+                  className="input-field"
+                  value={selectedRole}
+                  onChange={e => setSelectedRole(e.target.value)}
+                >
+                  <option value="PROGRAM_LEADER">Líder de programa</option>
+                  <option value="ADMIN">Administrador</option>
+                </select>
+              </div>
+              {assignMutation.isError && (
+                <p className="text-xs text-asa-error bg-red-50 rounded-lg px-3 py-2">
+                  Error al asignar el rol. Inténtalo de nuevo.
+                </p>
+              )}
+              <div className="flex gap-3 pt-2">
+                <button onClick={() => setSelectedUser(null)} className="btn-outline flex-1 justify-center">
+                  Cancelar
+                </button>
+                <button
+                  onClick={() => assignMutation.mutate({ userId: selectedUser.id, roleName: selectedRole })}
+                  disabled={assignMutation.isPending}
+                  className="btn-primary flex-1 justify-center"
+                >
+                  {assignMutation.isPending ? "Asignando..." : "Confirmar"}
+                </button>
+              </div>
             </div>
           </div>
         </div>

@@ -18,9 +18,21 @@ interface OnboardingQuestion {
 // ── Step 1 schema (static) ────────────────────────────────────────────────────
 
 const step1Schema = z.object({
-  firstName:   z.string().min(2, "Mínimo 2 caracteres"),
-  lastName:    z.string().min(2, "Mínimo 2 caracteres"),
-  phoneNumber: z.string().optional(),
+  firstName: z
+    .string()
+    .min(2, "Mínimo 2 caracteres")
+    .max(50, "Máximo 50 caracteres")
+    .regex(/^[a-zA-ZáéíóúÁÉÍÓÚñÑüÜ\s'-]+$/, "Solo se permiten letras"),
+  lastName: z
+    .string()
+    .min(2, "Mínimo 2 caracteres")
+    .max(50, "Máximo 50 caracteres")
+    .regex(/^[a-zA-ZáéíóúÁÉÍÓÚñÑüÜ\s'-]+$/, "Solo se permiten letras"),
+  phoneNumber: z
+    .string()
+    .regex(/^0[2-9]\d{8}$/, "Número ecuatoriano de 10 dígitos (ej: 0991234567)")
+    .or(z.literal(""))
+    .optional(),
 });
 
 type Step1Data = z.infer<typeof step1Schema>;
@@ -105,8 +117,8 @@ export default function OnboardingPage() {
     resolver: zodResolver(dynamicSchema),
   });
 
-  const handleStep2 = (data: Record<string, string>) => {
-    setStep2Data(data);
+  const handleStep2 = (data: Record<string, string | undefined>) => {
+    setStep2Data(data as Record<string, string>);
     setCurrentStep(2);
   };
 
@@ -170,8 +182,20 @@ export default function OnboardingPage() {
                   )}
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-asa-text mb-1.5">Teléfono (opcional)</label>
-                  <input className="input-field" placeholder="+593 99 999 9999" {...form1.register("phoneNumber")} />
+                  <label className="block text-sm font-medium text-asa-text mb-1.5">
+                    Teléfono
+                    <span className="text-xs text-asa-muted font-normal ml-1.5">(opcional, 10 dígitos)</span>
+                  </label>
+                  <input
+                    className={`input-field ${form1.formState.errors.phoneNumber ? "error" : ""}`}
+                    placeholder="0991234567"
+                    maxLength={10}
+                    {...form1.register("phoneNumber")}
+                  />
+                  {form1.formState.errors.phoneNumber && (
+                    <p className="mt-1 text-xs text-asa-error">{form1.formState.errors.phoneNumber.message}</p>
+                  )}
+                  <p className="mt-1 text-xs text-asa-muted">Celular: 09XXXXXXXX · Fijo: 0X-XXXXXXX</p>
                 </div>
                 <button type="submit" className="btn-primary w-full justify-center mt-2">Continuar</button>
               </form>

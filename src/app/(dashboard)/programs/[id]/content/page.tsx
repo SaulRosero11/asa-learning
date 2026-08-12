@@ -16,6 +16,7 @@ import {
   ChevronRight,
   ChevronDown as ChevronDownIcon,
   GripVertical,
+  X,
 } from "lucide-react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -448,7 +449,7 @@ function LeaderEditor({
   };
 
   return (
-    <div className="max-w-3xl space-y-4">
+    <div className="space-y-4">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
           <Link
@@ -721,59 +722,100 @@ function LessonModal({
       : "https://ejemplo.com/documento.pdf";
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4">
-      <div className="glass-panel w-full max-w-2xl space-y-4 max-h-[90vh] overflow-y-auto">
-        <h2 className="text-lg font-semibold">
-          {type === "create" ? "Nueva lección" : "Editar lección"}
-        </h2>
-
-        <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-          <div>
-            <label className="block text-sm font-medium mb-1">Título</label>
-            <input className="input-field w-full" {...register("title")} />
-            {errors.title && (
-              <p className="text-xs text-destructive mt-1">{errors.title.message}</p>
-            )}
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+      <div
+        className="bg-white rounded-2xl w-full max-w-2xl max-h-[90vh] flex flex-col"
+        style={{ boxShadow: "var(--shadow-elevated)" }}
+      >
+        {/* Header */}
+        <div className="flex items-center justify-between px-6 py-4 border-b border-asa-border shrink-0">
+          <div className="flex items-center gap-3">
+            {type === "create"
+              ? <Plus className="w-5 h-5 text-asa-primary" />
+              : <Edit3 className="w-5 h-5 text-asa-primary" />
+            }
+            <h2 className="text-lg font-semibold text-asa-text">
+              {type === "create" ? "Nueva lección" : "Editar lección"}
+            </h2>
           </div>
+          <button
+            type="button"
+            onClick={onClose}
+            className="btn-icon"
+            aria-label="Cerrar"
+          >
+            <X className="w-4 h-4" />
+          </button>
+        </div>
 
-          {type === "create" && (
+        {/* Body */}
+        <div className="p-6 overflow-y-auto flex-1">
+          <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
             <div>
-              <label className="block text-sm font-medium mb-1">Tipo de contenido</label>
-              <select className="input-field w-full" {...register("contentType")}>
-                <option value="TEXT">Texto enriquecido</option>
-                <option value="VIDEO">Video (YouTube / Vimeo)</option>
-                <option value="PDF">PDF</option>
-              </select>
-            </div>
-          )}
-
-          <div>
-            <label className="block text-sm font-medium mb-1">{contentLabel}</label>
-            {contentType === "TEXT" ? (
-              <RichTextEditor
-                value={lesson?.contentUrl ?? ""}
-                onChange={(html) => setValue("contentUrl", html)}
-                placeholder="Escribe el contenido de la lección aquí..."
-                minHeight="200px"
-              />
-            ) : (
+              <label className="block text-sm font-medium text-asa-text mb-1.5">
+                Título <span className="text-asa-error">*</span>
+              </label>
               <input
-                className="input-field w-full"
-                placeholder={contentPlaceholder}
-                {...register("contentUrl")}
+                className={`input-field w-full ${errors.title ? "error" : ""}`}
+                placeholder="Ej. Introducción al módulo"
+                {...register("title")}
               />
-            )}
-          </div>
+              {errors.title && (
+                <p className="text-xs text-asa-error mt-1">{errors.title.message}</p>
+              )}
+            </div>
 
-          <div className="flex justify-end gap-2 pt-2">
-            <button type="button" className="btn-outline" onClick={onClose}>
-              Cancelar
-            </button>
-            <button type="submit" className="btn-primary" disabled={isPending}>
-              {isPending ? "Guardando…" : type === "create" ? "Crear lección" : "Guardar cambios"}
-            </button>
-          </div>
-        </form>
+            {type === "create" && (
+              <div>
+                <label className="block text-sm font-medium text-asa-text mb-1.5">Tipo de contenido</label>
+                <select className="input-field w-full" {...register("contentType")}>
+                  <option value="TEXT">Texto enriquecido</option>
+                  <option value="VIDEO">Video (YouTube / Vimeo)</option>
+                  <option value="PDF">PDF</option>
+                </select>
+              </div>
+            )}
+
+            <div>
+              <label className="block text-sm font-medium text-asa-text mb-1.5">{contentLabel}</label>
+              {contentType === "TEXT" ? (
+                <RichTextEditor
+                  value={lesson?.contentUrl ?? ""}
+                  onChange={(html) => setValue("contentUrl", html)}
+                  placeholder="Escribe el contenido de la lección aquí..."
+                  minHeight="200px"
+                />
+              ) : (
+                <>
+                  <input
+                    className="input-field w-full"
+                    placeholder={contentPlaceholder}
+                    {...register("contentUrl")}
+                  />
+                  <p className="mt-1 text-xs text-asa-muted">
+                    {contentType === "VIDEO"
+                      ? "Soporta YouTube y Vimeo"
+                      : "URL directa al archivo PDF"}
+                  </p>
+                </>
+              )}
+            </div>
+
+            {/* Footer inside form */}
+            <div className="flex justify-end gap-3 pt-3 border-t border-asa-border">
+              <button type="button" className="btn-outline" onClick={onClose}>
+                Cancelar
+              </button>
+              <button type="submit" className="btn-primary" disabled={isPending}>
+                {isPending
+                  ? "Guardando…"
+                  : type === "create"
+                  ? "Crear lección"
+                  : "Guardar cambios"}
+              </button>
+            </div>
+          </form>
+        </div>
       </div>
     </div>
   );

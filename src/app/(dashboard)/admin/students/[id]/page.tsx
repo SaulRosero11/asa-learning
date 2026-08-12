@@ -43,14 +43,16 @@ const ENROLLMENT_STATUS: Record<string, { label: string; color: string }> = {
 export default function StudentDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id: studentId } = use(params);
 
-  const { data: profile, isLoading: loadingProfile } = useQuery<StudentProfile>({
+  const { data: profile, isLoading: loadingProfile, isError: profileError } = useQuery<StudentProfile>({
     queryKey: ["admin-student-profile", studentId],
     queryFn: () => apiClient.get(`/api/v1/admin/users/${studentId}/profile`).then(r => r.data),
+    retry: 1,
   });
 
   const { data: examSummary = [], isLoading: loadingExams } = useQuery<ExamSummary[]>({
     queryKey: ["admin-student-exam-summary", studentId],
     queryFn: () => apiClient.get(`/api/v1/admin/students/${studentId}/exam-summary`).then(r => r.data),
+    retry: 1,
   });
 
   const isLoading = loadingProfile || loadingExams;
@@ -76,6 +78,13 @@ export default function StudentDetailPage({ params }: { params: Promise<{ id: st
       {isLoading ? (
         <div className="space-y-4">
           {[1, 2, 3].map(i => <div key={i} className="h-32 bg-asa-border/30 rounded-2xl animate-pulse" />)}
+        </div>
+      ) : profileError ? (
+        <div className="bg-red-50 border border-red-200 rounded-2xl p-6 text-center">
+          <p className="text-sm font-semibold text-red-700 mb-1">Error al cargar el perfil</p>
+          <p className="text-xs text-red-600">
+            No se pudo obtener la información del estudiante. Verifica que el servidor esté activo e intenta nuevamente.
+          </p>
         </div>
       ) : profile ? (
         <>

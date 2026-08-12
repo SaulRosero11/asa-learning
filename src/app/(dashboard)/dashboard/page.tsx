@@ -27,6 +27,7 @@ interface Program {
   id: string; name: string; description: string;
   status: "DRAFT" | "ACTIVE" | "ARCHIVED";
   startDate: string | null; endDate: string | null;
+  imageUrl?: string | null;
 }
 
 interface PagedPrograms { content: Program[]; totalElements: number }
@@ -213,13 +214,27 @@ function StudentDashboard() {
                   href={`/programs/${p.id}`}
                   className="bg-white rounded-2xl border border-asa-border shadow-subtle overflow-hidden hover:shadow-card hover:border-asa-primary/20 transition-all group"
                 >
-                  <div className="h-20 flex items-center px-5" style={{ backgroundColor: bg }}>
-                    <div
-                      className="w-10 h-10 rounded-xl flex items-center justify-center text-white font-bold text-sm shadow-sm"
-                      style={{ backgroundColor: accent }}
-                    >
-                      {p.name.slice(0, 2).toUpperCase()}
-                    </div>
+                  <div
+                    className="h-20 relative overflow-hidden"
+                    style={p.imageUrl ? {} : { backgroundColor: bg }}
+                  >
+                    {p.imageUrl ? (
+                      <img
+                        src={p.imageUrl}
+                        alt={p.name}
+                        className="w-full h-full object-cover"
+                        onError={e => { (e.currentTarget as HTMLImageElement).style.display = "none"; }}
+                      />
+                    ) : (
+                      <div className="h-full flex items-center px-5">
+                        <div
+                          className="w-10 h-10 rounded-xl flex items-center justify-center text-white font-bold text-sm shadow-sm"
+                          style={{ backgroundColor: accent }}
+                        >
+                          {p.name.slice(0, 2).toUpperCase()}
+                        </div>
+                      </div>
+                    )}
                   </div>
                   <div className="p-5">
                     <h3 className="font-semibold text-asa-text text-sm leading-snug line-clamp-2 group-hover:text-asa-primary transition-colors">
@@ -323,12 +338,26 @@ export default function DashboardPage() {
 
   return (
     <div className="space-y-8">
-      {/* Welcome */}
-      <div>
-        <h1 className="text-3xl font-bold text-asa-text">
-          Bienvenido{firstName ? `, ${firstName}` : ""}
-        </h1>
-        <p className="text-asa-muted mt-1">Plataforma de capacitación ASA E-Learning</p>
+      {/* Welcome header */}
+      <div className="bg-white rounded-2xl border border-asa-border overflow-hidden" style={{ boxShadow: "var(--shadow-subtle)" }}>
+        <div className="h-2 bg-asa-primary w-full" />
+        <div className="flex items-center gap-5 px-6 py-5">
+          <div className="w-14 h-14 rounded-2xl overflow-hidden flex-shrink-0 bg-asa-primary flex items-center justify-center" style={{ boxShadow: "0 2px 8px rgba(107,63,200,0.3)" }}>
+            <img
+              src="/logo.jpg"
+              alt="ASA"
+              className="w-full h-full object-contain"
+              onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = "none"; }}
+            />
+          </div>
+          <div>
+            <p className="text-xs font-semibold uppercase tracking-widest text-asa-primary mb-0.5">Solidaridad y Acción</p>
+            <h1 className="text-2xl font-bold text-asa-text leading-tight">
+              Bienvenido{firstName ? `, ${firstName}` : ""}
+            </h1>
+            <p className="text-sm text-asa-muted mt-0.5">Plataforma de capacitación profesional ASA E-Learning</p>
+          </div>
+        </div>
       </div>
 
       {isLeader && <AdminDashboard analytics={analytics} isAdmin={isAdmin} />}
