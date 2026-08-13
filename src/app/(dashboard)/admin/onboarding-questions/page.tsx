@@ -324,7 +324,7 @@ export default function OnboardingQuestionsPage() {
                   onEdit={openEdit}
                   onDelete={setDeleteTarget}
                   onToggleActive={q => updateMutation.mutate({ id: q.id, data: {
-                    label: q.label, options: q.options, required: q.required,
+                    label: q.label, options: q.options ?? undefined, required: q.required,
                     displayOrder: q.displayOrder, active: !q.active,
                   }})}
                   isUpdating={updateMutation.isPending}
