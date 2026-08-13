@@ -1,10 +1,10 @@
 import axios from "axios";
 
 export const apiClient = axios.create({
-  baseURL: process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8080",
+  baseURL: "",
   timeout: 10000,
   headers: { "Content-Type": "application/json" },
-  withCredentials: true, // envía cookies HttpOnly en cada request
+  withCredentials: true,
 });
 
 let isRefreshing = false;

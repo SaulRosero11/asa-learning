@@ -21,6 +21,17 @@ async function fetchMe(backendUrl: string, cookie: string) {
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
+  // Rutas API y OAuth2 van al backend vía rewrite — el backend maneja su propia auth
+  if (
+    pathname.startsWith("/api/v1/") ||
+    pathname.startsWith("/api/auth/") ||
+    pathname.startsWith("/oauth2/") ||
+    pathname.startsWith("/login/oauth2/") ||
+    pathname.startsWith("/actuator/")
+  ) {
+    return NextResponse.next();
+  }
+
   if (PUBLIC_PATHS.some((p) => pathname.startsWith(p))) {
     return NextResponse.next();
   }

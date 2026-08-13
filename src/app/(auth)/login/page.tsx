@@ -50,8 +50,7 @@ export default function LoginPage() {
   };
 
   const handleGoogleLogin = () => {
-    const backendUrl = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8080";
-    window.location.href = `${backendUrl}/oauth2/authorization/google`;
+    window.location.href = "/oauth2/authorization/google";
   };
 
   return (
