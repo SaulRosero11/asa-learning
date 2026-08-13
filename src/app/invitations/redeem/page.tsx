@@ -1,12 +1,12 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { Suspense, useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { apiClient } from "@/lib/axios";
 
 type State = "loading" | "success" | "error";
 
-export default function RedeemInvitationPage() {
+function RedeemInvitationForm() {
   const router       = useRouter();
   const searchParams = useSearchParams();
   const token        = searchParams.get("token");
@@ -55,5 +55,13 @@ export default function RedeemInvitationPage() {
         )}
       </div>
     </div>
+  );
+}
+
+export default function RedeemInvitationPage() {
+  return (
+    <Suspense>
+      <RedeemInvitationForm />
+    </Suspense>
   );
 }

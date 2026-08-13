@@ -113,7 +113,7 @@ function AdminDashboard({ analytics, isAdmin }: { analytics: GlobalAnalytics | u
                 <YAxis tick={{ fontSize: 11, fill: "var(--color-asa-muted)" }} allowDecimals={false} />
                 <Tooltip
                   contentStyle={{ borderRadius: 12, border: "1px solid var(--color-asa-border)", fontSize: 12, boxShadow: "var(--shadow-card)" }}
-                  formatter={(v: number) => [v, "Estudiantes"]}
+                  formatter={(v) => [v ?? 0, "Estudiantes"]}
                 />
                 <Bar dataKey="estudiantes" radius={[6, 6, 0, 0]}>
                   {chartData.map((_, i) => (
