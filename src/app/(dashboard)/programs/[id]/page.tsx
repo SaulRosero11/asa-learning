@@ -129,18 +129,6 @@ export default function ProgramDetailPage({ params }: { params: Promise<{ id: st
 
   return (
     <div className="space-y-6 -mt-1">
-      {/* Breadcrumb */}
-      <nav className="flex items-center gap-2 text-sm">
-        <Link
-          href="/programs"
-          className="text-asa-muted hover:text-asa-primary transition-colors duration-150"
-        >
-          Programas
-        </Link>
-        <span className="text-asa-border select-none">/</span>
-        <span className="text-asa-text font-medium truncate max-w-xs">{program?.name ?? "…"}</span>
-      </nav>
-
       {/* Program Header */}
       <div
         className="rounded-2xl border border-asa-border overflow-hidden relative"

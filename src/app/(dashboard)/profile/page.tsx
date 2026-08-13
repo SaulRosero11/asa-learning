@@ -117,7 +117,7 @@ export default function ProfilePage() {
 
   if (isLoading) {
     return (
-      <div className="space-y-4 animate-pulse max-w-3xl">
+      <div className="space-y-4 animate-pulse">
         <div className="h-48 bg-asa-border/30 rounded-2xl" />
         <div className="h-64 bg-asa-border/30 rounded-2xl" />
       </div>
@@ -125,7 +125,7 @@ export default function ProfilePage() {
   }
 
   return (
-    <div className="max-w-3xl space-y-6">
+    <div className="space-y-6">
       {/* Saved toast */}
       {saved && (
         <div className="fixed top-4 right-4 z-50 bg-green-600 text-white px-4 py-3 rounded-xl shadow-elevated text-sm font-medium flex items-center gap-2">

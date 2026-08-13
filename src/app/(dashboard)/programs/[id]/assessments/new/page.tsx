@@ -273,7 +273,7 @@ export default function NewAssessmentPage({ params }: { params: Promise<{ id: st
 
   if (isEditMode && loadingEdit) {
     return (
-      <div className="space-y-4 max-w-3xl">
+      <div className="space-y-4">
         {[1, 2, 3].map(i => (
           <div key={i} className="h-24 bg-asa-border/40 rounded-xl animate-pulse" />
         ))}
@@ -282,7 +282,7 @@ export default function NewAssessmentPage({ params }: { params: Promise<{ id: st
   }
 
   return (
-    <div className="max-w-3xl space-y-6">
+    <div className="space-y-6">
       <ConfirmDialog
         open={showAttemptsWarning}
         title="¿Editar esta evaluación?"
